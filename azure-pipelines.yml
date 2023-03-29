@@ -29,7 +29,7 @@ variables:
     -Dcloud.publisher.screenshot=true
     -Dcloud.publisher.environment=KAP_DEV
     -Dcloud.publisher.workspace=KAP_Space
-#    -Dinstaller.clean=true
+    -Dinstaller.clean=true
 #/!\ For your architecture to support this configuration, the artifact repository needs to be visible from the Azure agent running your pipeline.
 #    -DaltDeploymentRepository=releases::default::$(artifact_url)/XXX/
 #Uncomment the parameters TO PUBLISH TO DOCKER: 
