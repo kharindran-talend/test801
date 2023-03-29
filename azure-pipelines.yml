@@ -29,7 +29,7 @@ variables:
     -Dcloud.publisher.screenshot=true
     -Dcloud.publisher.environment=KAP_DEV
     -Dcloud.publisher.workspace=KAP_Space
-    -Dinstaller.clean=true
+#    -Dinstaller.clean=true
 #/!\ For your architecture to support this configuration, the artifact repository needs to be visible from the Azure agent running your pipeline.
 #    -DaltDeploymentRepository=releases::default::$(artifact_url)/XXX/
 #Uncomment the parameters TO PUBLISH TO DOCKER: 
@@ -61,7 +61,7 @@ steps:
     inputs:
       mavenPomFile: '$(pom_xml.secureFilePath)'
       goals: 'org.talend.ci:builder-maven-plugin:$(builder-maven-version):generateAllPoms -X' 
-      options: '--batch-mode --settings $(settings_xml.secureFilePath) $(talend_ci_config)'
+      options: '--batch-mode --settings $(settings_xml.secureFilePath) $(talend_ci_config) -Dinstaller.clean=true'
       publishJUnitResults: false
 
   - task: Maven@3
