@@ -1,0 +1,72 @@
+# Talend CI/CD on Azure DevOps
+# Build Pipeline for building and publishing on Talend Cloud Management Console
+
+trigger: none
+pool: Default
+ #vmImage: 'ubuntu-latest'
+ #vmImage: 'windows-2022'
+
+variables:
+- group: Talend-Cloud-Variables
+#Variable corresponding to the ci builder version you want to use to build.
+- name: builder-maven-version
+  value: 8.0.12 
+#Variable corresponding to the Talend project name.
+- name: project_name
+  value: 'T00287805_MAIN'
+#Variable corresponding to the specific artifact you want to build. Define it as a variable in the GUI so it can be overwritten at runtime. If you don't use it, all existing artifacts in your project will be executed and published. 
+- name: jobs_to_build
+  value: 'jobs/process/test_mainjob_0.1'
+
+- name: talend_ci_config
+  value: >-
+    -Dlicense.path=$(license.secureFilePath)
+    -Dtalend.studio.p2.base=$(p2_base_url)
+    -Dtalend.studio.p2.update=$(p2_update_url)
+    -Pcloud-publisher
+    -Dservice.url=$(talend_cloud_url)
+    -Dcloud.token=$(talend_cloud_token)
+    -Dcloud.publisher.screenshot=true
+    -Dcloud.publisher.environment=KAP_DEV
+    -Dcloud.publisher.workspace=KAP_Space
+#    -Dinstaller.clean=true
+#/!\ For your architecture to support this configuration, the artifact repository needs to be visible from the Azure agent running your pipeline.
+#    -DaltDeploymentRepository=releases::default::$(artifact_url)/XXX/
+#Uncomment the parameters TO PUBLISH TO DOCKER: 
+#    -Pdocker
+#    -Dtalend.docker.name=$(docker_image_name)
+#    -Djkube.docker.push.registry=$(docker_registry)
+#    -Djkube.docker.username=$(docker_username)
+#    -Djkube.docker.password=$(docker_password)
+
+steps:
+  - task: DownloadSecureFile@1
+    name: settings_xml
+    inputs:
+      secureFile: azure_settings.xml
+
+  - task: DownloadSecureFile@1
+    name: license
+    inputs:
+      secureFile: license
+
+  - task: DownloadSecureFile@1
+    name: pom_xml
+    inputs:
+      secureFile: sample_pom.xml
+
+
+  - task: Maven@3
+    displayName: 'Maven install P2 and generate POMs'
+    inputs:
+      mavenPomFile: '$(pom_xml.secureFilePath)'
+      goals: 'org.talend.ci:builder-maven-plugin:$(builder-maven-version):generateAllPoms -X' 
+      options: '--batch-mode --settings $(settings_xml.secureFilePath) $(talend_ci_config)'
+      publishJUnitResults: false
+
+  - task: Maven@3
+    displayName: 'Maven build & publish Talend artifacts to Talend Cloud'
+    inputs:
+        mavenPomFile: '$(project_name)/poms/pom.xml'
+        goals: 'deploy' #compile / deploy
+        options: '--batch-mode --settings $(settings_xml.secureFilePath) -pl $(jobs_to_build) -am -fae $(talend_ci_config)'
